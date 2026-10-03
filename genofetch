@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# genofetch - Universal Anonymized System Fetcher
+# License: MIT (Open Source)
+
+import os
+import random
+
+LOGO = """
+    _  
+   / \\ 
+  /  / 
+ /  /  
+(_/   
+  _    
+ (_)   
+"""
+
+CONFIG_FILE = os.path.expanduser("~/.config/genofetch/tier.conf")
+
+def load_tier():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                tier = f.read().strip()
+                if tier in ["low", "mid", "high", "realistic"]:
+                    return tier
+        except:
+            pass
+    return "realistic"
+
+def get_randomized_os():
+    os_pool = [
+        "Arch Linux x86_64",
+        "Linux From Scratch (LFS)",
+        "Debian GNU/Linux 12 (bookworm)",
+        "Void Linux x86_64",
+        "Gentoo Linux Base System"
+    ]
+    return random.choice(os_pool)
+
+def get_matched_hardware(tier):
+    # Mutually compatible hardware pools (CPU, GPU, RAM tightly coupled to prevent unrealistic pairings)
+    
+    low_tier_pool = [
+        {
+            "cpu": "AMD FX-8320 Eight-Core (8) @ 3.500GHz",
+            "gpu": "NVIDIA GeForce GTX 970M",
+            "ram": "7120MiB / 15840MiB"
+        },
+        {
+            "cpu": "Intel i3-10100F (4) @ 3.600GHz",
+            "gpu": "AMD Radeon RX 580 2048SP",
+            "ram": "3842MiB / 7920MiB"
+        },
+        {
+            "cpu": "AMD Ryzen 3 3100 (4) @ 3.600GHz",
+            "gpu": "NVIDIA GeForce GTX 1070",
+            "ram": "7120MiB / 15840MiB"
+        },
+        {
+            "cpu": "Intel Pentium Gold G6400 (2) @ 4.000GHz",
+            "gpu": "AMD Radeon RX 6600",
+            "ram": "3842MiB / 7920MiB"
+        }
+    ]
+
+    mid_tier_pool = [
+        {
+            "cpu": "Intel i5-12400 (6) @ 4.400GHz",
+            "gpu": "NVIDIA GeForce RTX 3060",
+            "ram": "11400MiB / 15840MiB"
+        },
+        {
+            "cpu": "AMD Ryzen 5 5600X (6) @ 4.600GHz",
+            "gpu": "AMD Radeon RX 6700M",
+            "ram": "16384MiB / 32768MiB"
+        },
+        {
+            "cpu": "Intel i7-11800H (8) @ 4.600GHz",
+            "gpu": "NVIDIA GeForce RTX 4060 Laptop",
+            "ram": "16384MiB / 32768MiB"
+        },
+        {
+            "cpu": "AMD Ryzen 7 5800H (8) @ 4.400GHz",
+            "gpu": "AMD Radeon RX 7600",
+            "ram": "11400MiB / 15840MiB"
+        }
+    ]
+
+    high_tier_pool = [
+        {
+            "cpu": "Intel i7-14700H (20) @ 5.000GHz",
+            "gpu": "NVIDIA GeForce RTX 4070 Super",
+            "ram": "24576MiB / 32768MiB"
+        },
+        {
+            "cpu": "AMD Ryzen 7 7800X3D (8) @ 5.000GHz",
+            "gpu": "AMD Radeon RX 7800 XT",
+            "ram": "31200MiB / 65536MiB"
+        },
+        {
+            "cpu": "Intel i9-13900HX (24) @ 5.400GHz",
+            "gpu": "NVIDIA GeForce RTX 5070",
+            "ram": "48200MiB / 65536MiB"
+        },
+        {
+            "cpu": "AMD Ryzen 9 7945HX (16) @ 5.400GHz",
+            "gpu": "AMD Radeon RX 7900 XT",
+            "ram": "31200MiB / 65536MiB"
+        }
+    ]
+
+    # Weighted resolution logic (34% Low, 40% Mid, 26% High)
+    if tier == "low":
+        selected = random.choice(low_tier_pool)
+    elif tier == "mid":
+        selected = random.choice(mid_tier_pool)
+    elif tier == "high":
+        selected = random.choice(high_tier_pool)
+    else:
+        roll = random.randint(1, 100)
+        if roll <= 34:
+            selected = random.choice(low_tier_pool)
+        elif roll <= 74:
+            selected = random.choice(mid_tier_pool)
+        else:
+            selected = random.choice(high_tier_pool)
+
+    kernels = [
+        "6.11.2-custom-x86_64", "6.10.9-hardened-1",
+        "6.12.0-rc6-zen", "6.9.7-arch1-1", "6.8.0-45-generic"
+    ]
+    uptimes = [
+        "3 days, 7 hours", "14 hours, 22 minutes", 
+        "5 days, 19 hours", "12 days, 4 hours"
+    ]
+    packages = [
+        "842 (pacman)", "1240 (dpkg / rpm)", 
+        "690 (xbps)", "2150 (apt / dpkg)"
+    ]
+
+    return {
+        "os": get_randomized_os(),
+        "kernel": random.choice(kernels),
+        "uptime": random.choice(uptimes),
+        "packages": random.choice(packages),
+        "shell": "zsh 5.9",
+        "cpu": selected["cpu"],
+        "gpu": selected["gpu"],
+        "memory": selected["ram"],
+        "network": "[REDACTED / SECURE]"
+    }
+
+def main():
+    cyan = "\033[1;36m"
+    reset = "\033[0m"
+    
+    tier = load_tier()
+    specs = get_matched_hardware(tier)
+    
+    info = [
+        f"{cyan}OS{reset}: {specs['os']}",
+        f"{cyan}Kernel{reset}: {specs['kernel']}",
+        f"{cyan}Uptime{reset}: {specs['uptime']}",
+        f"{cyan}Packages{reset}: {specs['packages']}",
+        f"{cyan}Shell{reset}: {specs['shell']}",
+        f"{cyan}CPU{reset}: {specs['cpu']}",
+        f"{cyan}GPU{reset}: {specs['gpu']}",
+        f"{cyan}Memory{reset}: {specs['memory']}",
+        f"{cyan}Network{reset}: {specs['network']}"
+    ]
+    
+    logo_lines = LOGO.strip("\n").split("\n")
+    max_logo_width = max(len(line) for line in logo_lines) if logo_lines else 10
+    
+    for i in range(max(len(logo_lines), len(info))):
+        l_part = logo_lines[i] if i < len(logo_lines) else " " * max_logo_width
+        r_part = info[i] if i < len(info) else ""
+        print(f"{cyan}{l_part:<{max_logo_width + 4}}{reset}{r_part}")
+
+if __name__ == "__main__":
+    main()
